@@ -20,5 +20,4 @@ Edu Genius AI doesn’t just summarize — it **creates structured learning cont
 
 ### 🌍 Multilingual Learning for Everyone
 - 🌐 Translate full lectures into 12+ languages instantly.  
-- 🎙️ Regenerate voiceovers in the selected language.  
--
+- 🎙️ Regenerate voiceovers in the selected language.
