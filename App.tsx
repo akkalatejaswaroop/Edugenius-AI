@@ -9,7 +9,7 @@ import { WelcomeBanner } from './components/WelcomeBanner';
 import { PlusCircleIcon } from './components/icons';
 import { LoadingState, LecturePackage, FormValues, QuizQuestion, Assignment } from './types';
 import { 
-  generateScript,
+  generateScriptStream,
   generateSlidesFromScript,
   generateQuizAndResourcesFromScript,
   generateVoiceover, 
@@ -47,12 +47,22 @@ const App: React.FC = () => {
     try {
         setLoadingState({ isLoading: true, stage: 'Generating narration script...' });
 
-        // Step 1: Generate script first for rapid initial feedback
-        const script = await generateScript(values);
+        // Step 1: Generate script via stream for rapid initial feedback
+        const scriptStream = await generateScriptStream(values);
         
-        const packageWithScript = { ...emptyPackage, script };
-        setOriginalLecturePackage(packageWithScript);
-        setDisplayLecturePackage(packageWithScript);
+        let script = '';
+        const initialPackage = { ...emptyPackage };
+        setOriginalLecturePackage(initialPackage);
+        setDisplayLecturePackage(initialPackage);
+
+        for await (const chunk of scriptStream) {
+            script += chunk.text;
+            const streamingPackage = { ...initialPackage, script };
+            setOriginalLecturePackage(streamingPackage);
+            setDisplayLecturePackage(streamingPackage);
+        }
+
+        const packageWithScript = { ...initialPackage, script };
 
         setLoadingState({ isLoading: true, stage: 'Creating slides, quiz, audio & resources...' });
 

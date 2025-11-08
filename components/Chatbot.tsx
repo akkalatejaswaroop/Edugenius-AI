@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, Chat } from '@google/genai';
 import { MessageIcon, SendIcon, CloseIcon } from './icons';
@@ -33,7 +32,7 @@ If the user's question is not related to the lecture context, you can answer it 
       try {
         const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
         chatRef.current = ai.chats.create({
-          model: 'gemini-flash-lite-latest',
+          model: 'gemini-2.5-flash-lite',
           config: {
             systemInstruction: socraticSystemInstruction,
           }

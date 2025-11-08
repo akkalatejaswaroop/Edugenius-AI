@@ -105,6 +105,7 @@ const parseAndTransformContent = (rawText: string) => {
     }
 
     return camelCased;
+// FIX: Corrected syntax error in catch block.
   } catch (e) {
     console.error("Failed to parse JSON. Raw text:", rawText, "Sanitized:", sanitizedText, "Error:", e);
     throw new Error("The AI returned an invalid response format. Please try again.");
@@ -120,9 +121,10 @@ const fileToGenerativePart = async (file: File | Blob, mimeType?: string) => {
   return { inlineData: { data: await base64EncodedDataPromise, mimeType: mimeType || file.type } };
 };
 
-export const generateScript = async (values: FormValues): Promise<string> => {
+// FIX: Add explicit return type to fix a type inference issue in App.tsx.
+export const generateScriptStream = async (values: FormValues): Promise<AsyncGenerator<GenerateContentResponse>> => {
     const ai = getAI();
-    const model = 'gemini-2.5-flash';
+    const model = 'gemini-2.5-flash-lite';
     
     const basePrompt = `You are an expert curriculum designer, adopting the persona of a "${values.persona}". Generate a complete and detailed narration script for a lecture.
     - Topic: ${values.topic || 'the provided file'}
@@ -138,9 +140,8 @@ export const generateScript = async (values: FormValues): Promise<string> => {
         contents = basePrompt;
     }
 
-    const response: GenerateContentResponse = await retryWithBackoff(() => ai.models.generateContent({ model, contents }));
-    if (!response.text) throw new Error("AI returned an empty script.");
-    return response.text;
+    const responseStream = await retryWithBackoff(() => ai.models.generateContentStream({ model, contents }));
+    return responseStream;
 };
 
 export const generateSlidesFromScript = async (script: string, theme: string, useThinkingMode: boolean): Promise<{ slides: Slide[] }> => {
@@ -158,7 +159,9 @@ export const generateSlidesFromScript = async (script: string, theme: string, us
     ${script}
     ---`;
 
-    const response: GenerateContentResponse = await retryWithBackoff(() => ai.models.generateContent({ model, contents: prompt, ...(useThinkingMode && { thinkingConfig: { thinkingBudget: 32768 }}) }));
+    // FIX: Correctly place thinkingConfig inside the config object.
+    const config = useThinkingMode ? { thinkingConfig: { thinkingBudget: 32768 } } : undefined;
+    const response: GenerateContentResponse = await retryWithBackoff(() => ai.models.generateContent({ model, contents: prompt, config }));
     if (!response.text) throw new Error("AI returned no slide data.");
     return parseAndTransformContent(response.text);
 };
@@ -181,7 +184,10 @@ export const generateQuizAndResourcesFromScript = async (script: string, useThin
     ${script}
     ---`;
 
-    const config = { tools: [{googleSearch: {}}], ...(useThinkingMode && { thinkingConfig: { thinkingBudget: 32768 }}) };
+    const config: { tools: any[]; thinkingConfig?: object } = { tools: [{googleSearch: {}}] };
+    if (useThinkingMode) {
+        config.thinkingConfig = { thinkingBudget: 32768 };
+    }
 
     const response: GenerateContentResponse = await retryWithBackoff(() => ai.models.generateContent({ model, contents: prompt, config }));
     const groundingChunks = response.candidates?.[0]?.groundingMetadata?.groundingChunks || [];

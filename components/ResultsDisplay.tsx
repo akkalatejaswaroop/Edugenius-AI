@@ -482,28 +482,38 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ lecturePackage, 
 
       <div className="bg-base-200/50 p-6 sm:p-8 rounded-2xl shadow-lg border border-base-300 min-h-[500px]">
         {activeTab === 'slides' && (
-          <div>
-            <div className={`relative aspect-video rounded-lg p-8 sm:p-12 flex flex-col justify-center items-center text-center shadow-inner ${themeClasses.bg}`}>
-              <h3 className={`text-2xl sm:text-4xl font-bold mb-6 ${themeClasses.title}`}>{slides[currentSlide].title}</h3>
-              <ul className={`space-y-3 text-base sm:text-lg list-disc list-inside text-left max-w-2xl ${themeClasses.text}`}>
-                {(slides[currentSlide].content || []).map((point, i) => <li key={i}>{point}</li>)}
-              </ul>
+          slides && slides.length > 0 && slides[currentSlide] ? (
+            <div>
+              <div className={`relative aspect-video rounded-lg p-8 sm:p-12 flex flex-col justify-center items-center text-center shadow-inner ${themeClasses.bg}`}>
+                <h3 className={`text-2xl sm:text-4xl font-bold mb-6 ${themeClasses.title}`}>{slides[currentSlide].title}</h3>
+                <ul className={`space-y-3 text-base sm:text-lg list-disc list-inside text-left max-w-2xl ${themeClasses.text}`}>
+                  {(slides[currentSlide].content || []).map((point, i) => <li key={i}>{point}</li>)}
+                </ul>
+              </div>
+              <div className="mt-4 text-sm bg-base-100 p-4 rounded-lg border border-base-300">
+                  <h4 className="font-semibold text-content/80 mb-2">Speaker Notes:</h4>
+                  <p className="text-content/70 italic">{slides[currentSlide].speakerNotes}</p>
+              </div>
+              <div className="flex justify-between items-center mt-6">
+                  <button onClick={() => setCurrentSlide(Math.max(0, currentSlide - 1))} disabled={currentSlide === 0} className="px-4 py-2 bg-base-300 rounded-md disabled:opacity-50 transition-opacity hover:bg-base-300/70">Prev</button>
+                  <div className="flex items-center gap-4">
+                    <span className="text-sm text-content/80">Slide {currentSlide + 1} of {slides.length}</span>
+                     <button onClick={handleDownloadSlides} disabled={isDownloading} className="flex items-center gap-2 px-4 py-2 bg-brand-secondary text-white rounded-md disabled:opacity-50 disabled:bg-base-300 transition-colors hover:bg-brand-secondary/90">
+                        {isDownloading ? 'Generating...' : <><DownloadIcon className="h-5 w-5"/>Download (PDF)</>}
+                      </button>
+                  </div>
+                  <button onClick={() => setCurrentSlide(Math.min(slides.length - 1, currentSlide + 1))} disabled={currentSlide === slides.length - 1} className="px-4 py-2 bg-base-300 rounded-md disabled:opacity-50 transition-opacity hover:bg-base-300/70">Next</button>
+              </div>
             </div>
-            <div className="mt-4 text-sm bg-base-100 p-4 rounded-lg border border-base-300">
-                <h4 className="font-semibold text-content/80 mb-2">Speaker Notes:</h4>
-                <p className="text-content/70 italic">{slides[currentSlide].speakerNotes}</p>
+          ) : (
+            <div className="text-center p-8 flex flex-col items-center justify-center min-h-[400px]">
+                <SlideIcon className="h-16 w-16 text-content/30 mb-4" />
+                <p className="text-lg font-semibold text-content/90">No Slides Available</p>
+                <p className="text-sm text-content/70 mt-2 max-w-md">
+                    It seems there was an issue generating the slides for this lecture. This can sometimes happen with very complex topics or due to a temporary service issue.
+                </p>
             </div>
-            <div className="flex justify-between items-center mt-6">
-                <button onClick={() => setCurrentSlide(Math.max(0, currentSlide - 1))} disabled={currentSlide === 0} className="px-4 py-2 bg-base-300 rounded-md disabled:opacity-50 transition-opacity hover:bg-base-300/70">Prev</button>
-                <div className="flex items-center gap-4">
-                  <span className="text-sm text-content/80">Slide {currentSlide + 1} of {slides.length}</span>
-                   <button onClick={handleDownloadSlides} disabled={isDownloading} className="flex items-center gap-2 px-4 py-2 bg-brand-secondary text-white rounded-md disabled:opacity-50 disabled:bg-base-300 transition-colors hover:bg-brand-secondary/90">
-                      {isDownloading ? 'Generating...' : <><DownloadIcon className="h-5 w-5"/>Download (PDF)</>}
-                    </button>
-                </div>
-                <button onClick={() => setCurrentSlide(Math.min(slides.length - 1, currentSlide + 1))} disabled={currentSlide === slides.length - 1} className="px-4 py-2 bg-base-300 rounded-md disabled:opacity-50 transition-opacity hover:bg-base-300/70">Next</button>
-            </div>
-          </div>
+          )
         )}
 
         {activeTab === 'script' && (
