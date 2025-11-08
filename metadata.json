@@ -1,0 +1,7 @@
+{
+  "name": "Edu Genius AI",
+  "description": "Edu Genius AI: An AI-powered platform that transforms a simple prompt, URL, or file into a comprehensive educational package, including slides, a narrated video, and a quiz.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
