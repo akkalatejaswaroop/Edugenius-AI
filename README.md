@@ -1,20 +1,24 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# 🧠 Edu Genius AI  
+**“Transform Ideas into Intelligent Learning Experiences”**
 
-# Run and deploy your AI Studio app
+Edu Genius AI is a next-generation platform that turns a **simple prompt** into a **complete lecture package** — including beautifully designed slides, synchronized narration, interactive quizzes, and curated learning resources.  
+It’s your **AI-powered classroom assistant**, built for educators, learners, and creators who want to deliver knowledge effortlessly and intelligently.
 
-This contains everything you need to run your app locally.
+---
 
-View your app in AI Studio: https://ai.studio/apps/drive/1ap2R_-UOuZX9NeY36N7V53i5JV2kY4V5
+## ✨ What Makes Edu Genius AI Special
 
-## Run Locally
+### 🎓 From Prompt → To Complete Lecture
+Edu Genius AI doesn’t just summarize — it **creates structured learning content**:
+- **Slides:** Professionally themed decks generated automatically with speaker notes.
+- **Narration Script:** Detailed and coherent lecture flow written by AI.
+- **Voiceover:** Lifelike narration powered by Google Text-to-Speech.
+- **Interactive Quiz:** Test understanding with answer validation and explanations.
+- **Extended Resources:** Get 10+ relevant YouTube videos, online courses, and articles for deeper exploration.
 
-**Prerequisites:**  Node.js
+---
 
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### 🌍 Multilingual Learning for Everyone
+- 🌐 Translate full lectures into 12+ languages instantly.  
+- 🎙️ Regenerate voiceovers in the selected language.  
+-
