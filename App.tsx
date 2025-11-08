@@ -6,8 +6,8 @@ import { Chatbot } from './components/Chatbot';
 import { Highlights } from './components/Highlights';
 import { ProjectInfo } from './components/ProjectInfo';
 import { WelcomeBanner } from './components/WelcomeBanner';
-import { PlusCircleIcon } from './components/icons';
-import { LoadingState, LecturePackage, FormValues, QuizQuestion, Assignment } from './types';
+import { PlusCircleIcon, FileTextIcon, VideoIcon } from './components/icons';
+import { LoadingState, LecturePackage, FormValues, Assignment } from './types';
 import { 
   generateScriptStream,
   generateSlidesFromScript,
@@ -18,6 +18,9 @@ import {
   generateAssignment,
   gradeAssignment,
 } from './services/geminiService';
+import { VideoTab } from './components/VideoTab';
+
+type AppMode = 'lecture' | 'video';
 
 const App: React.FC = () => {
   const [originalLecturePackage, setOriginalLecturePackage] = useState<LecturePackage | null>(null);
@@ -31,6 +34,7 @@ const App: React.FC = () => {
   const [isTranslating, setIsTranslating] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [appMode, setAppMode] = useState<AppMode>('lecture');
   
   const handleFormSubmit = useCallback(async (values: FormValues) => {
     setError(null);
@@ -244,20 +248,13 @@ const App: React.FC = () => {
     }
   }, [displayLecturePackage, formValues, currentLanguage]);
 
-  return (
-    <div className="min-h-screen bg-base-100 font-sans">
-      <WelcomeBanner />
-      <Header />
-      <main className="container mx-auto px-4 py-8 sm:py-12">
-        <section className="text-center max-w-3xl mx-auto">
-           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-content">
-              Create Comprehensive Lectures in <span className="text-brand-primary">Seconds</span>
-           </h2>
-           <p className="mt-6 text-lg text-content/70">
-            Welcome to the future of education. Provide a topic, an article link, or a file, and our AI will generate a complete lecture package with slides, script, quiz, and multilingual translations.
-          </p>
-        </section>
+  const renderContent = () => {
+    if (appMode === 'video') {
+      return <VideoTab />;
+    }
 
+    return (
+      <>
         <div className="max-w-3xl mx-auto mt-10">
           <LectureForm onSubmit={handleFormSubmit} isLoading={loadingState.isLoading} />
         </div>
@@ -300,12 +297,57 @@ const App: React.FC = () => {
             <ProjectInfo />
           </>
         )}
+      </>
+    );
+  };
+
+
+  return (
+    <div className="min-h-screen bg-base-100 font-sans">
+      <WelcomeBanner />
+      <Header />
+      <main className="container mx-auto px-4 py-8 sm:py-12">
+        <section className="text-center max-w-3xl mx-auto">
+           <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-content">
+              Create Comprehensive Lectures in <span className="text-brand-primary">Seconds</span>
+           </h2>
+           <p className="mt-6 text-lg text-content/70">
+            Welcome to the future of education. Provide a topic, an article link, or a file, and our AI will generate a complete lecture package with slides, script, quiz, and multilingual translations.
+          </p>
+        </section>
+
+        <div className="flex justify-center my-10">
+          <div className="flex items-center p-1 space-x-1 bg-base-200 rounded-lg">
+            <button
+              onClick={() => setAppMode('lecture')}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                appMode === 'lecture' ? 'bg-brand-primary text-white shadow-md' : 'text-content/80 hover:bg-base-300'
+              }`}
+            >
+              <FileTextIcon className="h-5 w-5" />
+              Lecture Generator
+            </button>
+            <button
+              onClick={() => setAppMode('video')}
+              className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                appMode === 'video' ? 'bg-brand-primary text-white shadow-md' : 'text-content/80 hover:bg-base-300'
+              }`}
+            >
+              <VideoIcon className="h-5 w-5" />
+              Video Generator
+            </button>
+          </div>
+        </div>
+
+        {renderContent()}
 
       </main>
-      <Chatbot 
-        lecturePackage={displayLecturePackage}
-        currentSlideIndex={currentSlide}
-      />
+      {appMode === 'lecture' && (
+        <Chatbot 
+          lecturePackage={displayLecturePackage}
+          currentSlideIndex={currentSlide}
+        />
+      )}
     </div>
   );
 };

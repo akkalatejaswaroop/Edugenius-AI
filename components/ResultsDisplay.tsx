@@ -2,10 +2,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { LecturePackage, LoadingState, Resource, QuizQuestion, Assignment } from '../types';
 import { LoadingIndicator } from './LoadingIndicator';
-import { SlideIcon, ScriptIcon, QuizIcon, BookOpenIcon, AcademicCapIcon, PlayCircleIcon, GlobeIcon, DownloadIcon, RefreshCwIcon, CopyIcon, LanguagesIcon, ClipboardListIcon, LightbulbIcon, CheckCircleIcon, UploadCloudIcon, FileIcon, XIcon, StarIcon } from './icons';
+import { SlideIcon, ScriptIcon, QuizIcon, BookOpenIcon, AcademicCapIcon, PlayCircleIcon, GlobeIcon, DownloadIcon, RefreshCwIcon, CopyIcon, LanguagesIcon, ClipboardListIcon, LightbulbIcon, CheckCircleIcon, UploadCloudIcon, FileIcon, XIcon, StarIcon, ExpandIcon } from './icons';
 import { decodeAudioData } from '../utils/audio';
+import { FullscreenSlider } from './FullscreenSlider';
 
-declare const html2canvas: any;
 declare const jspdf: any;
 
 interface ResultsDisplayProps {
@@ -394,6 +394,7 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ lecturePackage, 
   const [activeTab, setActiveTab] = useState<Tab>('slides');
   const [isDownloading, setIsDownloading] = useState(false);
   const [copyStatus, setCopyStatus] = useState(false);
+  const [isFullScreen, setIsFullScreen] = useState(false);
   const themeClasses = getThemeClasses(visualTheme);
 
   useEffect(() => {
@@ -403,22 +404,52 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ lecturePackage, 
   }, [lecturePackage]);
   
   const handleDownloadSlides = async () => {
-      if (!lecturePackage || !lecturePackage.slides.length) return;
-      setIsDownloading(true);
-      try {
+    if (!lecturePackage || !lecturePackage.slides.length) return;
+    setIsDownloading(true);
+    try {
         const { jsPDF } = jspdf;
-        const pdf = new jsPDF({ orientation: 'landscape', unit: 'px', format: [1280, 720] });
-        for (let i = 0; i < lecturePackage.slides.length; i++) {
-            const slideElement = document.getElementById(`slide-capture-${i}`);
-            if (slideElement) {
-                const canvas = await html2canvas(slideElement, { scale: 2, useCORS: true });
-                if (i > 0) pdf.addPage([1280, 720], 'landscape');
-                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight());
+        const pdf = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'letter' });
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const margin = 40;
+
+        const getPdfThemeColors = (theme: string): { bg: string, text: string, title: string } => {
+            switch (theme) {
+                case 'Professional & Corporate': return { bg: '#1e293b', text: '#cbd5e1', title: '#ffffff' };
+                case 'Creative & Playful': return { bg: '#7c3aed', text: '#f3e8ff', title: '#ffffff' };
+                case 'Academic & Traditional': return { bg: '#4a0e0e', text: '#fef3c7', title: '#ffffff' };
+                default: return { bg: '#1f2937', text: '#d1d5db', title: '#ffffff' };
             }
-        }
+        };
+
+        const colors = getPdfThemeColors(visualTheme);
+        
+        lecturePackage.slides.forEach((slide, index) => {
+            if (index > 0) pdf.addPage();
+
+            pdf.setFillColor(colors.bg);
+            pdf.rect(0, 0, pdf.internal.pageSize.getWidth(), pdf.internal.pageSize.getHeight(), 'F');
+            
+            pdf.setFontSize(24);
+            pdf.setTextColor(colors.title);
+            pdf.setFont('helvetica', 'bold');
+            const titleLines = pdf.splitTextToSize(slide.title, pageWidth - margin * 2);
+            pdf.text(titleLines, pageWidth / 2, margin + 20, { align: 'center' });
+
+            pdf.setFontSize(12);
+            pdf.setTextColor(colors.text);
+            pdf.setFont('helvetica', 'normal');
+            
+            const contentText = (slide.content || []).map(point => `• ${point}`).join('\n');
+            const splitText = pdf.splitTextToSize(contentText, pageWidth - margin * 2.5);
+            pdf.text(splitText, margin, margin + 60 + (titleLines.length * 20));
+        });
+
         pdf.save('AI-Lecture-Slides.pdf');
-      } catch (error) { console.error("Error generating PDF:", error); } 
-      finally { setIsDownloading(false); }
+    } catch (error) {
+        console.error("Error generating PDF:", error);
+    } finally {
+        setIsDownloading(false);
+    }
   };
 
   const handleDownloadScript = () => {
@@ -453,16 +484,15 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ lecturePackage, 
 
   return (
     <div className="max-w-5xl mx-auto mt-12">
-      <div style={{ position: 'absolute', left: '-9999px', top: 0, width: '1280px', height: '720px' }}>
-          {slides.map((slide, index) => (
-              <div id={`slide-capture-${index}`} key={index} className={`${themeClasses.bg} p-20 flex flex-col justify-center items-center text-center w-full h-full font-sans`}>
-                  <h3 className={`text-6xl font-bold mb-12 ${themeClasses.title}`}>{slide.title}</h3>
-                  <ul className={`space-y-6 text-4xl list-disc list-inside text-left max-w-4xl ${themeClasses.text}`}>
-                      {(slide.content || []).map((point, i) => <li key={i}>{point}</li>)}
-                  </ul>
-              </div>
-          ))}
-      </div>
+        {isFullScreen && slides && slides.length > 0 && (
+            <FullscreenSlider
+                slides={slides}
+                currentIndex={currentSlide}
+                setCurrentIndex={setCurrentSlide}
+                onClose={() => setIsFullScreen(false)}
+                themeClasses={themeClasses}
+            />
+        )}
       <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
           <div className="flex flex-wrap items-center p-1 space-x-1 bg-base-200 rounded-lg">
             <TabButton active={activeTab === 'slides'} onClick={() => setActiveTab('slides')} icon={<SlideIcon className="h-5 w-5"/>} label="Slides" />
@@ -498,9 +528,18 @@ export const ResultsDisplay: React.FC<ResultsDisplayProps> = ({ lecturePackage, 
                   <button onClick={() => setCurrentSlide(Math.max(0, currentSlide - 1))} disabled={currentSlide === 0} className="px-4 py-2 bg-base-300 rounded-md disabled:opacity-50 transition-opacity hover:bg-base-300/70">Prev</button>
                   <div className="flex items-center gap-4">
                     <span className="text-sm text-content/80">Slide {currentSlide + 1} of {slides.length}</span>
-                     <button onClick={handleDownloadSlides} disabled={isDownloading} className="flex items-center gap-2 px-4 py-2 bg-brand-secondary text-white rounded-md disabled:opacity-50 disabled:bg-base-300 transition-colors hover:bg-brand-secondary/90">
-                        {isDownloading ? 'Generating...' : <><DownloadIcon className="h-5 w-5"/>Download (PDF)</>}
-                      </button>
+                    <div className="flex items-center gap-2">
+                         <button 
+                             onClick={() => setIsFullScreen(true)} 
+                             className="p-2.5 bg-base-300 text-content/90 rounded-md hover:bg-base-300/70 transition-colors"
+                             aria-label="Enter fullscreen"
+                         >
+                            <ExpandIcon className="h-5 w-5"/>
+                        </button>
+                         <button onClick={handleDownloadSlides} disabled={isDownloading} className="flex items-center gap-2 px-4 py-2 bg-brand-secondary text-white rounded-md disabled:opacity-50 disabled:bg-base-300 transition-colors hover:bg-brand-secondary/90">
+                            {isDownloading ? 'Generating...' : <><DownloadIcon className="h-5 w-5"/>Download (PDF)</>}
+                          </button>
+                    </div>
                   </div>
                   <button onClick={() => setCurrentSlide(Math.min(slides.length - 1, currentSlide + 1))} disabled={currentSlide === slides.length - 1} className="px-4 py-2 bg-base-300 rounded-md disabled:opacity-50 transition-opacity hover:bg-base-300/70">Next</button>
               </div>

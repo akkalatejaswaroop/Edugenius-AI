@@ -105,7 +105,6 @@ const parseAndTransformContent = (rawText: string) => {
     }
 
     return camelCased;
-// FIX: Corrected syntax error in catch block.
   } catch (e) {
     console.error("Failed to parse JSON. Raw text:", rawText, "Sanitized:", sanitizedText, "Error:", e);
     throw new Error("The AI returned an invalid response format. Please try again.");
@@ -121,7 +120,7 @@ const fileToGenerativePart = async (file: File | Blob, mimeType?: string) => {
   return { inlineData: { data: await base64EncodedDataPromise, mimeType: mimeType || file.type } };
 };
 
-// FIX: Add explicit return type to fix a type inference issue in App.tsx.
+// FIX: Added an explicit return type to fix a TypeScript type inference issue.
 export const generateScriptStream = async (values: FormValues): Promise<AsyncGenerator<GenerateContentResponse>> => {
     const ai = getAI();
     const model = 'gemini-2.5-flash-lite';
@@ -146,7 +145,7 @@ export const generateScriptStream = async (values: FormValues): Promise<AsyncGen
 
 export const generateSlidesFromScript = async (script: string, theme: string, useThinkingMode: boolean): Promise<{ slides: Slide[] }> => {
     const ai = getAI();
-    const model = useThinkingMode ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+    const model = useThinkingMode ? 'gemini-2.5-pro' : 'gemini-2.5-flash-lite';
     
     const prompt = `Based on the following narration script, generate a series of presentation slides.
     - Visual Theme: ${theme}
@@ -159,7 +158,6 @@ export const generateSlidesFromScript = async (script: string, theme: string, us
     ${script}
     ---`;
 
-    // FIX: Correctly place thinkingConfig inside the config object.
     const config = useThinkingMode ? { thinkingConfig: { thinkingBudget: 32768 } } : undefined;
     const response: GenerateContentResponse = await retryWithBackoff(() => ai.models.generateContent({ model, contents: prompt, config }));
     if (!response.text) throw new Error("AI returned no slide data.");
@@ -168,7 +166,7 @@ export const generateSlidesFromScript = async (script: string, theme: string, us
 
 export const generateQuizAndResourcesFromScript = async (script: string, useThinkingMode: boolean): Promise<{ quiz: QuizQuestion[]; resources: Resource[], groundingChunks?: any[] }> => {
     const ai = getAI();
-    const model = useThinkingMode ? 'gemini-2.5-pro' : 'gemini-2.5-flash';
+    const model = useThinkingMode ? 'gemini-2.5-pro' : 'gemini-2.5-flash-lite';
 
     const prompt = `Based on the following narration script, generate a quiz and a list of further learning resources.
     Use Google Search to find relevant, up-to-date resources.
@@ -297,4 +295,35 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
   const response: GenerateContentResponse = await retryWithBackoff(() => ai.models.generateContent({ model: 'gemini-2.5-flash', contents }));
   if (!response.text) throw new Error("Failed to transcribe audio. The model returned an empty response.");
   return response.text;
+};
+export const generateVideo = async (
+  prompt: string,
+  image?: { imageBytes: string, mimeType: string },
+) => {
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY as string });
+
+  let operation = await ai.models.generateVideos({
+    model: 'veo-3.1-fast-generate-preview',
+    prompt,
+    ...(image && { image }),
+    config: {
+      numberOfVideos: 1,
+      resolution: '720p',
+      aspectRatio: '16:9',
+    },
+  });
+
+  while (!operation.done) {
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    operation = await ai.operations.getVideosOperation({ operation });
+  }
+
+  const downloadLink = operation.response?.generatedVideos?.[0]?.video?.uri;
+  if (!downloadLink) {
+    throw new Error('Video generation did not return a download link.');
+  }
+
+  const response = await fetch(`${downloadLink}&key=${process.env.API_KEY}`);
+  const videoBlob = await response.blob();
+  return URL.createObjectURL(videoBlob);
 };
